@@ -31,3 +31,13 @@ export default function DeleteConfirmation({ onConfirm, onCancel }) {
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+

@@ -19,8 +19,8 @@ function App() {
 
   const [errorUserPlaces, setErrorUserPlaces] = useState();
 
-  const [isFetching, setIsFetching] = useState();
-
+  const [isFetching, setIsFetching] = useState();    
+  
   useEffect(() => {
     async function fetchUserSavedPlaces() {
       setIsFetching(true);
