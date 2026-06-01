@@ -7,35 +7,16 @@ import logoImg from "./assets/logo.png";
 import AvailablePlaces from "./components/AvailablePlaces.jsx";
 import { updatePlaces, fetchUserPlaces } from "./http.js";
 import Error from "./components/Error.jsx";
+import useFetch from "./Hooks/useFetch.js";
 
 function App() {
   const selectedPlace = useRef();
-
-  const [userPlaces, setUserPlaces] = useState([]);
 
   const [modalIsOpen, setModalIsOpen] = useState(false);
 
   const [errorUpdatingPlace, setErrorUpdatingPlace] = useState();
 
-  const [errorUserPlaces, setErrorUserPlaces] = useState();
-
-  const [isFetching, setIsFetching] = useState();    
-  
-  useEffect(() => {
-    async function fetchUserSavedPlaces() {
-      setIsFetching(true);
-      try {
-        const places = await fetchUserPlaces();
-        setUserPlaces(places);
-      } catch (error) {
-        setErrorUserPlaces({
-          message: error.message || "Unable to fetch Saved Places",
-        });
-      }
-      setIsFetching(false);
-    }
-    fetchUserSavedPlaces();
-  }, []);
+  const { isFetching, error, fetchedData,setFetchedData } = useFetch(fetchUserPlaces, []);
 
   function handleStartRemovePlace(place) {
     setModalIsOpen(true);
@@ -47,7 +28,7 @@ function App() {
   }
 
   async function handleSelectPlace(selectedPlace) {
-    setUserPlaces((prevPickedPlaces) => {
+    setFetchedData((prevPickedPlaces) => {
       if (!prevPickedPlaces) {
         prevPickedPlaces = [];
       }
@@ -57,9 +38,9 @@ function App() {
       return [selectedPlace, ...prevPickedPlaces];
     });
     try {
-      await updatePlaces([selectedPlace, ...userPlaces]);
+      await updatePlaces([selectedPlace, ...fetchedData]);
     } catch (error) {
-      setUserPlaces(userPlaces);
+      setFetchedData(fetchedData);
       setErrorUpdatingPlace({
         message: error.message || "Error while Updating Places",
       });
@@ -68,17 +49,17 @@ function App() {
 
   const handleRemovePlace = useCallback(
     async function handleRemovePlace() {
-      setUserPlaces((prevPickedPlaces) =>
+      setFetchedData((prevPickedPlaces) =>
         prevPickedPlaces.filter(
           (place) => place.id !== selectedPlace.current.id,
         ),
       );
       try {
         await updatePlaces(
-          userPlaces.filter((place) => place.id !== selectedPlace.current.id),
+          fetchedData.filter((place) => place.id !== selectedPlace.current.id),
         );
       } catch (error) {
-        setUserPlaces(userPlaces);
+        setFetchedData(fetchedData);
         setErrorUpdatingPlace({
           message: error.message || "Error while Deleting",
         });
@@ -86,7 +67,7 @@ function App() {
 
       setModalIsOpen(false);
     },
-    [userPlaces],
+    [fetchedData],
   );
 
   function onUpdatingError() {
@@ -120,15 +101,22 @@ function App() {
         </p>
       </header>
       <main>
-        {errorUserPlaces && <Error  title={"An Error has occured!"} message={errorUserPlaces.message}/>}
-        {!errorUserPlaces && <Places
-          title="I'd like to visit ..."
-          fallbackText="Select the places you would like to visit below."
-          places={userPlaces}
-          onSelectPlace={handleStartRemovePlace}
-          isLoading={isFetching}
-          loadingText="fetching your saved places"
-        />}
+        {error && (
+          <Error
+            title={"An Error has occured!"}
+            message={error.message}
+          />
+        )}
+        {!error && (
+          <Places
+            title="I'd like to visit ..."
+            fallbackText="Select the places you would like to visit below."
+            places={fetchedData}
+            onSelectPlace={handleStartRemovePlace}
+            isLoading={isFetching}
+            loadingText="fetching your saved places"
+          />
+        )}
 
         <AvailablePlaces onSelectPlace={handleSelectPlace} />
       </main>
